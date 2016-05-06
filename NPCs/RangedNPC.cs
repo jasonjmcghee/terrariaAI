@@ -27,15 +27,16 @@ namespace AIRefactor.NPCs {
         public override void SetDefaults() {
             npc.CloneDefaults(NPCID.GoblinArcher);
             Main.npcFrameCount[npc.type] = 25;
-            /*NPCID.Sets.ExtraFramesCount[npc.type] = 9;
+            NPCID.Sets.ExtraFramesCount[npc.type] = 9;
             NPCID.Sets.AttackFrameCount[npc.type] = 4;
             NPCID.Sets.AttackType[npc.type] = 0;
             NPCID.Sets.AttackTime[npc.type] = 90;
-            NPCID.Sets.AttackAverageChance[npc.type] = 30;*/
+            NPCID.Sets.AttackAverageChance[npc.type] = 30;
             npc.aiStyle = -1;
             npc.stepSpeed = 2;
             npc.damage = 0;
             npc.immortal = true;
+            animationType = NPCID.Guide;
         }
 
         /*public override bool PreAI() {
@@ -173,10 +174,7 @@ namespace AIRefactor.NPCs {
                             } else if (hitSide == Physics.side.TOP || hitSide == Physics.side.BOTTOM) {
                                 if (AttemptToMoveToPositionX(NearestSafeX(threat, hitTime))) {
                                     npc.ai[1] = 0;
-                                    float timeUntilProjectileCollides = -hitTime;
-                                    float npcReturnDirection = Math.Sign(npc.position.X - lastPosition.X);
-                                    float timeUntilNPCReturns = 0; Physics.SolveForTime(npc.stepSpeed * npcReturnDirection, 0, Main.player[Main.myPlayer].position.X);
-                                    npc.ai[0] = timeUntilProjectileCollides + timeUntilNPCReturns;
+                                    npc.ai[0] = -hitTime;
                                     threat = null;
                                     inDanger = false;
                                 }
