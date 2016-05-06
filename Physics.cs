@@ -68,25 +68,6 @@ namespace AIRefactor {
             return (leftIntersects || rightIntersects) && (topIntersects || bottomIntersects);
         }
 
-        public static bool WillCollide(Vector2 positionA, float widthA, float heightA,
-                Vector2 positionB, float widthB, float heightB) {
-
-            bool leftBeforeLeft = positionA.X - widthA / 2 <= positionB.X - widthB / 2;
-            bool rightPastRight = positionA.X + widthA / 2 >= positionB.X + widthB / 2;
-            bool rightPastLeft = positionA.X + widthA / 2 >= positionB.X - widthB / 2;
-            bool leftBeforeRight = positionA.X - widthA / 2 <= positionB.X + widthB / 2;
-
-            bool bottomPastBottom = positionA.Y + heightA / 2 >= positionB.Y + heightB / 2;
-            bool topBeforeTop = positionA.Y - heightA / 2 <= positionB.Y - heightB / 2;
-            bool bottomPastTop = positionA.Y + heightA / 2 >= positionB.Y - heightB / 2;
-            bool topBeforeBottom = positionA.Y - heightA / 2 <= positionB.Y + heightB / 2;
-
-            bool xCollision = (rightPastLeft && leftBeforeLeft) || (leftBeforeRight && rightPastRight);
-            bool yCollision = (bottomPastTop && topBeforeTop) || (topBeforeBottom && bottomPastBottom);
-
-            return xCollision && yCollision;
-        }
-
         public static Tuple<float, side> Collision (Vector2 positionA, Vector2 velocityA, Vector2 accelerationA, float widthA, float heightA,
             Vector2 positionB, Vector2 velocityB, Vector2 accelerationB, float widthB, float heightB) {
 
