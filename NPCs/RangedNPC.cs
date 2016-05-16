@@ -15,6 +15,7 @@ namespace AIRefactor.NPCs {
         private int jump;
         private float jumpSpeed = Player.jumpSpeed;
         private int jumpHeight = Player.jumpHeight;
+        private float gravity = Player.defaultGravity;
         private Vector2 lastPosition = new Vector2(-1, -1);
         private bool atLastPosition = true;
         private ProjectileWrapper threat = null;
@@ -56,6 +57,7 @@ namespace AIRefactor.NPCs {
                 npc.velocity.X = 0;
                 if (threat != null && WillHitNPC(threat, threat.Hit(npc).Item1)) {
                     npc.velocity.X = currentVelocityX;
+                    return false;
                 } else {
                     return true;
                 }
@@ -68,8 +70,9 @@ namespace AIRefactor.NPCs {
                 } else {
                     float currentVelocityX = npc.velocity.X;
                     npc.velocity.X = -npc.stepSpeed * Math.Sign(dist);
-                    if (threat != null && !inDanger && WillHitNPC(threat, threat.Hit(npc).Item1)) {
-                        npc.velocity.X = 0;
+                    if (threat != null && WillHitNPC(threat, threat.Hit(npc).Item1)) {
+                        npc.velocity.X = -npc.velocity.X;
+                        return true;
                     } else {
                         // For target player code
                         return true;
@@ -79,14 +82,22 @@ namespace AIRefactor.NPCs {
                 float currentVelocityX = npc.velocity.X;
                 npc.velocity.X = -npc.stepSpeed * Math.Sign(dist);
                 if (threat != null && WillHitNPC(threat, threat.Hit(npc).Item1)) {
-                    npc.velocity.X = currentVelocityX;
+                    npc.velocity.X = -npc.velocity.X;
+                    return true;
+                } else {
+                    return true;
                 }
             }
             return false;
         }
 
         private float InverseProjectileDistance (Projectile projectile) {
-            return projectile.damage / projectile.Distance(npc.position);
+            ProjectileWrapper temp = new ProjectileWrapper(projectile);
+            if (WillHitNPC(temp, temp.Hit(npc).Item1)) {
+                return projectile.damage / projectile.Distance(npc.position);
+            } else {
+                return 0;
+            }
         }
 
         private ProjectileWrapper LargestThreat(ThreatFunction threatFunction) {
@@ -94,7 +105,7 @@ namespace AIRefactor.NPCs {
             float biggestThreatScore = 0;
 
             foreach (Projectile projectile in Main.projectile) {
-                if (!projectile.npcProj && projectile.type != 0 && projectile.active) {
+                if (!projectile.npcProj && projectile.type != 0 && projectile.active && projectile.damage > 0) {
                     float threatFunctionResult = threatFunction(projectile);
                     if (threatFunctionResult > biggestThreatScore) {
                         biggestThreat = projectile;
@@ -106,11 +117,8 @@ namespace AIRefactor.NPCs {
             return null;
         }
 
-        private bool WillHitNPC (ProjectileWrapper projectile, float frames) {
-            if (projectile != null) {
-                return projectile.WillCollideWithNPC(npc, frames);
-            }
-            return false;
+        private bool WillHitNPC (ProjectileWrapper projectile, float time) {
+            return projectile != null && projectile.WillCollideWithNPC(npc, time);
         }
 
         private void Jump () {
@@ -130,8 +138,8 @@ namespace AIRefactor.NPCs {
          * If the projectile will hit our top half, move towards the projectile
          */
         private float NearestSafeX (ProjectileWrapper wrapper, float frames) {
-            int direction = Math.Sign(wrapper.projectile.velocity.X) >= 0 ? 1 : -1;
-            float offset = (npc.width / 2 + wrapper.width / 2 + 1) * direction;
+            int oppositeDirection = wrapper.projectile.velocity.X < 0 ? 1 : -1;
+            float offset = (npc.width + wrapper.width + 1) * oppositeDirection;
             float hitY = npc.position.Y;
             if (WillHitNPCOnBottomHalf(wrapper, frames)) {
                 hitY += npc.height / 2;
@@ -161,22 +169,29 @@ namespace AIRefactor.NPCs {
                     Physics.side hitSide = hit.Item2;
 
                     if (hitTime != -1) {
-                        Vector2 velocityOnHit = threat.InstantaneousVelocity(hitTime);
+                        //Vector2 velocityOnHit = threat.InstantaneousVelocity(hitTime);
 
                         inDanger = WillHitNPC(threat, hitTime);
                         if (inDanger) {
                             if (hitSide == Physics.side.LEFT || hitSide == Physics.side.RIGHT) {
-                                Jump();
-                                threat = null;
-                                npc.ai[1] = 0;
-                                inDanger = false;
-                                wasInDanger = true;
-                            } else if (hitSide == Physics.side.TOP || hitSide == Physics.side.BOTTOM) {
-                                if (AttemptToMoveToPositionX(NearestSafeX(threat, hitTime))) {
-                                    npc.ai[1] = 0;
-                                    npc.ai[0] = -hitTime;
+                                float timeToReachMaxHeight = Physics.SolveForTime(-jumpSpeed, gravity, jumpHeight / 2);
+                                if (hitTime <= timeToReachMaxHeight) {
+                                    Jump();
                                     threat = null;
+                                    npc.ai[1] = 0;
                                     inDanger = false;
+                                    wasInDanger = true;
+                                }
+                            } else if (hitSide == Physics.side.TOP || hitSide == Physics.side.BOTTOM) {
+                                if (threat.projectile.oldVelocity.X != 0 || threat.projectile.velocity.X == 0) {
+                                    float safeTime = -threat.Hit(npc.position, npc.velocity, Vector2.Zero, npc.width, 1).Item1;
+                                    if (AttemptToMoveToPositionX(NearestSafeX(threat, hitTime))) {
+                                        npc.ai[1] = 0;
+                                        // Calculate the time when npc can return to what they were doing
+                                        npc.ai[0] = safeTime;
+                                        threat = null;
+                                        inDanger = false;
+                                    }
                                 }
                             }
                         }

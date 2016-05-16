@@ -18,8 +18,13 @@ namespace AIRefactor.Wrappers {
         // Return the earliest time a projectile will hit
         public Tuple<float, Physics.side> Hit(NPC npc) {
             Vector2 npcAcceleration = npc.oldVelocity.Equals(Vector2.Zero) ? Vector2.Zero : npc.velocity - npc.oldVelocity;
+            return Hit(npc.position, npc.velocity, Vector2.Zero, npc.width, npc.height);
+        }
+
+        public Tuple<float, Physics.side> Hit(Vector2 position, Vector2 velocity, Vector2 acceleration,
+            float w, float h) {
             return Physics.Collision(projectile.position, projectile.velocity, projectile.velocity - projectile.oldVelocity, width, height,
-                npc.position, npc.velocity, Vector2.Zero, npc.width, npc.height);
+                position, velocity, acceleration, w, h);
         }
 
         public Vector2 InstantaneousVelocity(float time) {
@@ -52,9 +57,14 @@ namespace AIRefactor.Wrappers {
             return WillCollide(npcFuturePosition, npc.width, npc.height, time);
         }
 
-        public bool WillCollide(Vector2 targetPosition, float targetWidth, float targetHeight, float time) {
-            Vector2 projectileFuturePosition = InstantaneousPosition(time);
-            return Physics.Intersects(projectileFuturePosition, width, height, 
+        public bool WillCollideWithNPC(NPC npc, Vector2 acceleration, float time) {
+            Vector2 npcFuturePosition = Physics.InstantaneousPosition(npc.position, npc.velocity, acceleration, time);
+            return WillCollide(npcFuturePosition, npc.width, npc.height, time);
+        }
+
+        public bool WillCollide(Vector2 targetPosition, int targetWidth, int targetHeight, float time) {
+            return Physics.Intersects(InstantaneousPosition(time + 0.1f), width, height, 
+                targetPosition, targetWidth, targetHeight) || Physics.Intersects(InstantaneousPosition(time - 0.1f), width, height,
                 targetPosition, targetWidth, targetHeight);
         }
 

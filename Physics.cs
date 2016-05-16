@@ -55,15 +55,24 @@ namespace AIRefactor {
         }
 
         public static bool Between (float x, float s1, float s2) {
-            return x >= s1 && x <= s2;
+            return (x >= s1 && x <= s2) || (x <= s1 && x >= s2);
         }
 
         public static bool Intersects (Vector2 centerA, float widthA, float heightA,
             Vector2 centerB, float widthB, float heightB) {
-            bool leftIntersects = Between(centerA.X - widthA / 2, centerB.X - widthB / 2, centerB.X + widthB / 2);
-            bool rightIntersects = Between(centerA.X + widthA / 2, centerB.X - widthB / 2, centerB.X + widthB / 2);
-            bool topIntersects = Between(centerA.Y - heightA / 2, centerB.Y - heightB / 2, centerB.Y + heightB / 2);
-            bool bottomIntersects = Between(centerA.Y + heightA / 2, centerB.Y - heightB / 2, centerB.Y + heightB / 2);
+            bool leftIntersectsA = Between(centerA.X - widthA / 2, centerB.X - widthB / 2, centerB.X + widthB / 2);
+            bool leftIntersectsB = Between(centerB.X - widthB / 2, centerA.X - widthA / 2, centerA.X + widthA / 2);
+            bool rightIntersectsA = Between(centerA.X + widthA / 2, centerB.X - widthB / 2, centerB.X + widthB / 2);
+            bool rightIntersectsB = Between(centerB.X + widthB / 2, centerA.X - widthA / 2, centerA.X + widthA / 2);
+            bool topIntersectsA = Between(centerA.Y - heightA / 2, centerB.Y - heightB / 2, centerB.Y + heightB / 2);
+            bool topIntersectsB = Between(centerB.Y - heightB / 2, centerA.Y - heightA / 2, centerA.Y + heightA / 2);
+            bool bottomIntersectsA = Between(centerA.Y + heightA / 2, centerB.Y - heightB / 2, centerB.Y + heightB / 2);
+            bool bottomIntersectsB = Between(centerB.Y + heightB / 2, centerA.Y - heightA / 2, centerA.Y + heightA / 2);
+
+            bool leftIntersects = leftIntersectsA || rightIntersectsB;
+            bool rightIntersects = rightIntersectsA || leftIntersectsB;
+            bool topIntersects = topIntersectsA || bottomIntersectsB;
+            bool bottomIntersects = bottomIntersectsA || topIntersectsB;
 
             return (leftIntersects || rightIntersects) && (topIntersects || bottomIntersects);
         }
